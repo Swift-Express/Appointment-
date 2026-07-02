@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swift Delivery | Book an Appointment</title>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root{
+    --navy:#0B2E55; --sky:#3FA9E0; --white:#fff; --bg:#f5f8fc; --card:#ffffffcc;
+  }
+  *{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+  body{margin:0;background:linear-gradient(135deg,#0B2E55 0%,#1e4a7a 100%);min-height:100vh;color:#111;overflow-x:hidden}
+
+  /* Animations */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:0}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .fade{animation:fadeUp .6s ease both}
+
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 5%;color:#fff}
+  header h1{display:flex;align-items:center;gap:10px;font-size:20px}
+  header .logo{width:36px;height:36px;background:var(--sky);border-radius:8px;display:grid;place-items:center;font-weight:800}
+
+  .btn{background:var(--sky);color:#fff;border:0;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:700;transition:.2s}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(63,169,224,.4)}
+  .btn.ghost{background:transparent;border:1.5px solid #fff}
+
+  /* Landing */
+  .hero{max-width:1100px;margin:0 auto;padding:60px 5%;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;color:#fff}
+  .hero h2{font-size:42px;line-height:1.1;margin:0 0 16px}
+  .hero p{opacity:.9;font-size:16px}
+  .hero-art{width:100%;animation:float 6s ease-in-out infinite}
+
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal.active{display:flex}
+  .card{background:var(--card);backdrop-filter:blur(12px);padding:28px;border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+  .card h2{margin:0 0 12px;color:var(--navy)}
+  input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1.5px solid #ddd;border-radius:10px;font-size:14px}
+  textarea{min-height:120px;resize:vertical}
+  .link{color:var(--sky);cursor:pointer;font-weight:600}
+
+  /* Dashboard */
+  #dashboard{display:none;padding:30px 5%}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+  .tile{background:#fff;border-radius:16px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.08);transition:.3s;cursor:pointer}
+  .tile:hover{transform:translateY(-6px)}
+  .tile h3{margin:0 0 8px;color:var(--navy)}
+  .tile p{color:#555;font-size:14px;margin:0 0 14px}
+
+  .section-title{color:#fff;margin:30px 0 12px;font-size:20px}
+
+  footer{color:#fff;text-align:center;padding:30px 5%;opacity:.7;font-size:13px}
+  @media(max-width:900px){.hero{grid-template-columns:1fr;text-align:center}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><div class="logo">SD</div> Swift Delivery</h1>
+  <div id="authBtns">
+    <button class="btn ghost" id="loginBtn">Sign In</button>
+    <button class="btn" id="signupBtn">Sign Up</button>
+  </div>
+  <button class="btn ghost" id="logoutBtn" style="display:none">Logout</button>
+</header>
+
+<!-- HERO / LANDING -->
+<section class="hero fade" id="landing">
+  <div>
+    <h2>Reliable. Fast. Global.</h2>
+    <p>Book a delivery appointment, track shipments, and contact our support team — all in one place. Account required to book.</p>
+    <button class="btn" id="ctaSignup">Get Started →</button>
+  </div>
+  <img class="hero-art" src="https://cdn-icons-png.flaticon.com/512/3097/3097149.png" alt="Delivery">
+</section>
+
+<!-- AUTH MODAL -->
+<div class="modal" id="authModal">
+  <div class="card fade">
+    <h2 id="authTitle">Sign Up</h2>
+    <input id="fullname" placeholder="Full Name">
+    <input id="phone" placeholder="Phone Number" type="tel">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <select id="country">
+      <option value="">Select Country</option>
+      <option>Nigeria</option><option>Ghana</option><option>Kenya</option>
+      <option>South Africa</option><option>UK</option><option>USA</option><option>Other</option>
+    </select>
+    <button class="btn" id="authSubmit" style="width:100%;margin-top:10px">Create Account</button>
+    <p style="text-align:center;margin:12px 0 0;font-size:14px">
+      <span id="authToggle" class="link">Already have an account? Sign In</span>
+    </p>
+    <button class="btn ghost" style="width:100%;margin-top:8px;color:#333;border-color:#ccc" id="closeAuth">Cancel</button>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal" id="bookModal">
+  <div class="card fade">
+    <h2>Book Appointment</h2>
+    <input id="bookDate" type="date">
+    <input id="bookTime" type="time">
+    <textarea id="bookNote" placeholder="Pickup address, package details..."></textarea>
+    <button class="btn" id="bookSubmit" style="width:100%">Confirm Booking</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px;color:#333;border-color:#ccc" id="closeBook">Cancel</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<main id="dashboard">
+  <h2 class="section-title fade">Welcome, <span id="userName"></span></h2>
+  
+  <div class="grid fade">
+    <div class="tile" id="openBook">
+      <h3>📅 Book Appointment</h3>
+      <p>Schedule a pickup or drop-off with Swift Delivery.</p>
+      <button class="btn">Book Now</button>
+    </div>
+    <div class="tile" onclick="alert('Redirect to tracking page')">
+      <h3>📦 Track Your Shipment</h3>
+      <p>Enter tracking ID to see live status.</p>
+      <button class="btn">Track</button>
+    </div>
+    <div class="tile" onclick="window.open('https://yourdomain.com','_blank')">
+      <h3>🌐 Main Website</h3>
+      <p>Visit our main corporate site.</p>
+      <button class="btn">Visit</button>
+    </div>
+  </div>
+
+  <h2 class="section-title fade">Message Swift Support</h2>
+  <div class="card fade" style="max-width:600px">
+    <p style="margin-top:0;color:#555">Your message will be sent to <b>expressdeliveryltd6@gmail.com</b> from your account email.</p>
+    <input id="msgSubject" placeholder="Subject">
+    <textarea id="msgBody" placeholder="Write your message..."></textarea>
+    <button class="btn" id="sendMsg" style="width:100%">Send Message</button>
+    <p id="msgStatus" style="font-size:13px;margin-top:8px"></p>
+  </div>
+</main>
+
+<footer>© 2026 Swift Delivery Company. All rights reserved.</footer>
+
+<script>
+// 1. INIT EMAILJS - REPLACE THESE
+emailjs.init("YOUR_PUBLIC_KEY"); // Get from emailjs.com
+
+const SERVICE_ID = "YOUR_SERVICE_ID";
+const TEMPLATE_ID = "YOUR_TEMPLATE_ID"; 
+// Template should have: {{from_name}}, {{from_email}}, {{subject}}, {{message}}
+
+let isLogin = false;
+let currentUser = null;
+
+// 2. AUTH UI
+const show = (el, v=true) => el.style.display = v?'block':'none';
+$('#signupBtn,#ctaSignup').onclick = () => openAuth(false);
+$('#loginBtn').onclick = () => openAuth(true);
+$('#closeAuth').onclick = () => $('#authModal').classList.remove('active');
+$('#authToggle').onclick = () => openAuth(!isLogin);
+
+function openAuth(login){
+  isLogin = login;
+  $('#authTitle').textContent = login?'Sign In':'Sign Up';
+  $('#fullname,#phone,#country').style.display = login?'none':'block';
+  $('#authSubmit').textContent = login?'Sign In':'Create Account';
+  $('#authToggle').textContent = login?'Need an account? Sign Up':'Already have an account? Sign In';
+  $('#authModal').classList.add('active');
+}
+
+$('#authSubmit').onclick = () => {
+  const email = $('#email').value.trim();
+  const pass = $('#password').value.trim();
+  if(!email||!pass) return alert('Email + Password required');
+
+  if(!isLogin){
+    const name = $('#fullname').value.trim();
+    const phone = $('#phone').value.trim();
+    const country = $('#country').value;
+    if(!name||!phone||!country) return alert('Fill all fields');
+    currentUser = {name,email,phone,country};
+  } else {
+    const saved = JSON.parse(localStorage.getItem('swift_'+email)||'null');
+    if(!saved) return alert('No account found. Sign up first.');
+    currentUser = saved;
+  }
+  localStorage.setItem('swift_'+email, JSON.stringify(currentUser));
+  localStorage.setItem('swift_current', email);
+  enterDashboard();
+};
+
+$('#logoutBtn').onclick = () => {
+  localStorage.removeItem('swift_current');
+  location.reload();
+};
+
+function enterDashboard(){
+  $('#authModal').classList.remove('active');
+  show($('#landing'),false);
+  show($('#authBtns'),false);
+  show($('#logoutBtn'),true);
+  show($('#dashboard'),true);
+  $('#userName').textContent = currentUser.name;
+}
+
+// 3. BOOKING
+$('#openBook').onclick = () => $('#bookModal').classList.add('active');
+$('#closeBook').onclick = () => $('#bookModal').classList.remove('active');
+$('#bookSubmit').onclick = () => {
+  if(!$('#bookDate').value||!$('#bookTime').value) return alert('Pick date + time');
+  alert(`Appointment booked for ${$('#bookDate').value} at ${$('#bookTime').value}\nWe’ll email ${currentUser.email}`);
+  $('#bookModal').classList.remove('active');
+};
+
+// 4. MESSAGE TO COMPANY EMAIL
+$('#sendMsg').onclick = async () => {
+  const subject = $('#msgSubject').value.trim();
+  const message = $('#msgBody').value.trim();
+  if(!subject||!message) return alert('Subject + Message required');
+  
+  $('#msgStatus').textContent = 'Sending...';
+  try{
+    await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+      from_name: currentUser.name,
+      from_email: currentUser.email,
+      subject: subject,
+      message: message,
+      to_email: 'expressdeliveryltd6@gmail.com'
+    });
+    $('#msgStatus').textContent = '✅ Sent! We’ll reply to '+currentUser.email;
+    $('#msgSubject').value=''; $('#msgBody').value='';
+  }catch(e){
+    $('#msgStatus').textContent = '❌ Failed. Check EmailJS keys.';
+  }
+};
+
+// 5. AUTO LOGIN
+window.onload = () => {
+  const email = localStorage.getItem('swift_current');
+  if(email){
+    currentUser = JSON.parse(localStorage.getItem('swift_'+email));
+    if(currentUser) enterDashboard();
+  }
+};
+
+const $ = s => document.querySelector(s);
+</script>
+</body>
+</html>
